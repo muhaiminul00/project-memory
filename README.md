@@ -26,8 +26,10 @@ have to rebuild it yourself.
 ## What it does
 
 - On first run in a project, scaffolds whichever of the three layers don't
-  already exist - `PROJECT_STATE.md`, `Wiki/index.md`, `Wiki/log.md` at the
-  project root - and **never touches anything already present**.
+  already exist - `.project-memory/PROJECT_STATE.md`,
+  `.project-memory/Wiki/index.md`, `.project-memory/Wiki/log.md` (same
+  convention as the `remember` plugin's own `.remember/` folder) - and
+  **never touches anything already present**.
 - Once, seeds a short starter block into that project's `.claude/CLAUDE.md`
   (not the root `CLAUDE.md` you actually maintain - this keeps plugin/tool
   instructions separate from your own project documentation) explaining the
@@ -42,7 +44,13 @@ have to rebuild it yourself.
   it scaffolds that project the next time Claude Code starts there.
   Installed at user scope: it scaffolds whatever project you open next,
   automatically, the same way it would on a fresh per-project install -
-  there's nothing to remember to run first.
+  there's nothing to remember to run first. **Caveat, stated plainly:**
+  "the next time Claude Code starts there" means an actual session boundary
+  - `startup`, `resume`, `compact`, `clear`, or a forked session. Running
+  `/plugin install` itself does not trigger it, even mid-session - Claude
+  Code has no hook that fires the instant a plugin is enabled, only at the
+  next session boundary. If nothing's scaffolded right after installing,
+  that's expected; `/clear` (or restarting) is what actually kicks it off.
 
 ## Why use it
 
@@ -53,6 +61,13 @@ true right now" versus "here's the full history of how we got here." This
 plugin doesn't solve that with anything clever - it just gives Claude a
 place to put things, and a rule for which of three places a given piece of
 information belongs in, so it stops needing to be re-explained.
+
+Credit where it's due: the three-layer, LLM-maintained-wiki pattern itself
+is [Andrej Karpathy's](https://gist.github.com/karpathy/442a6bf555914893e9891c11519de94f)
+idea, not this project's. This plugin is an independent implementation of
+that pattern for Claude Code - not a fork or a copy of any of his code -
+packaged so it scaffolds and self-maintains automatically instead of being
+set up by hand each time.
 
 ## How to use it
 
@@ -89,8 +104,9 @@ own, as part of normal work, not just when reminded:
 
 ## What this plugin does NOT assume about your project
 
-Scaffolding uses fixed default names/paths (`PROJECT_STATE.md`, `Wiki/`)
-since v1 has no machine-parsed config file to override them. If your
+Scaffolding uses fixed default names/paths (`.project-memory/PROJECT_STATE.md`,
+`.project-memory/Wiki/`) since v1 has no machine-parsed config file to
+override them. If your
 project already tracks state or decisions under different names:
 
 - Say so in `.claude/CLAUDE.md` or your project's own root `CLAUDE.md` -

@@ -2,7 +2,7 @@
 description: Health-check the Wiki for contradictions, orphan pages, stale claims, and missing cross-references
 ---
 
-This is the "Lint" workflow: a periodic health check of this project's Wiki (default `Wiki/`, or wherever this project's `.claude/CLAUDE.md` or root CLAUDE.md names it instead), not a search for new facts to add.
+This is the "Lint" workflow: a periodic health check of this project's Wiki (default `.project-memory/Wiki/`, or wherever this project's `.claude/CLAUDE.md` or root CLAUDE.md names it instead), not a search for new facts to add.
 
 1. Read `Wiki/index.md` in full, then every page it links to.
 2. Flag, for each: a page no longer linked from the index (orphan); two pages making claims that can no longer both be true (contradiction); a claim that reads as still-current but is dated or references something since superseded (stale claim); a page that references another page/decision by name without a link where one should exist (missing cross-reference).

@@ -21,8 +21,12 @@ const stateDir = path.join(projectDir, '.claude', 'hooks', 'state');
 // under different names - see README "What this plugin does NOT assume".
 // The hook only ever creates these defaults when nothing exists at that
 // exact path; it never renames, merges, or deletes anything.
-const STATE_DOC = path.join(projectDir, 'PROJECT_STATE.md');
-const WIKI_DIR = path.join(projectDir, 'Wiki');
+// Everything lives under .project-memory/ (matches the `remember` plugin's
+// own .remember/ convention) rather than the project root, so plugin-owned
+// state doesn't mix with a project's own root-level files.
+const MEMORY_DIR = path.join(projectDir, '.project-memory');
+const STATE_DOC = path.join(MEMORY_DIR, 'PROJECT_STATE.md');
+const WIKI_DIR = path.join(MEMORY_DIR, 'Wiki');
 const WIKI_INDEX = path.join(WIKI_DIR, 'index.md');
 const WIKI_LOG = path.join(WIKI_DIR, 'log.md');
 
@@ -40,8 +44,8 @@ const context =
   "log now. `/memory-log`/`/memory-promote`/`/memory-lint` are the manual fallback for when you " +
   "want to trigger one explicitly, not the primary path. See this project's `.claude/CLAUDE.md` " +
   "(this plugin's own seeded instructions) and its root CLAUDE.md for file names if either " +
-  'defines them, else the defaults are `PROJECT_STATE.md` and `Wiki/` (`index.md`, `log.md`) at ' +
-  'the project root.';
+  'defines them, else the defaults are `.project-memory/PROJECT_STATE.md` and `.project-memory/' +
+  'Wiki/` (`index.md`, `log.md`).';
 
 const output = {
   hookSpecificOutput: {
@@ -58,11 +62,19 @@ seedClaudeMd();
 function scaffoldMemoryFiles() {
   // Cheap sentinel-file stat gates this on every run after the first, so
   // existing files are never re-stat'd just to test for prior scaffolding.
-  const sentinelFile = path.join(stateDir, '.memory-scaffolded');
+  // Versioned (`-v2`, not the original `.memory-scaffolded`) because this
+  // revision moved the scaffold target from the project root to
+  // `.project-memory/` - a project already scaffolded under the old layout
+  // must re-scaffold under the new one, not see the old sentinel and skip.
+  // Same lesson as the CLAUDE.md-seed sentinel collision fixed earlier
+  // (13a4933): a sentinel has to change whenever the artifact set it gates
+  // changes, or it silently locks in a stale state forever.
+  const sentinelFile = path.join(stateDir, '.memory-scaffolded-v2');
   if (fs.existsSync(sentinelFile)) return;
 
   try {
     fs.mkdirSync(stateDir, { recursive: true });
+    fs.mkdirSync(MEMORY_DIR, { recursive: true });
 
     const needsWikiDir = !fs.existsSync(WIKI_INDEX) || !fs.existsSync(WIKI_LOG);
     if (needsWikiDir) fs.mkdirSync(WIKI_DIR, { recursive: true });
@@ -73,8 +85,8 @@ function scaffoldMemoryFiles() {
         'durable facts/decisions (see `Wiki/*.md`). Overwritten each session,',
         'never appended to.',
         '',
-        'Read this first, every session. Then `Wiki/index.md` for anything this',
-        'file points to but does not explain.',
+        'Read this first, every session. Then `.project-memory/Wiki/index.md`',
+        'for anything this file points to but does not explain.',
         '',
         '---',
         '',
@@ -95,7 +107,7 @@ function scaffoldMemoryFiles() {
         '           something works or WHAT was decided, not the story of',
         '           getting there. Read this index every session; drill into',
         '           specific pages only as needed for the task at hand.',
-        'Not this:  Wiki/log.md (append-only historical/audit record, consulted',
+        'Not this:  .project-memory/Wiki/log.md (append-only historical/audit',
         '           only on demand) or the project state doc (current-state',
         '           dashboard - read that in full every session too).',
         '```',
@@ -167,23 +179,29 @@ function seedClaudeMd() {
     '## Project Memory (project-memory plugin)',
     '',
     'This project has the `project-memory` plugin installed, providing a',
-    'three-layer memory model, based on the LLM-maintained-wiki pattern',
-    '(https://gist.github.com/karpathy/442a6bf555914893e9891c11519de94f).',
-    'Every file the plugin scaffolds says so in its own header - this is',
-    'plugin-managed structure, not ad hoc project documentation:',
+    'three-layer memory model inspired by the LLM-maintained-wiki pattern in',
+    "Andrej Karpathy's gist",
+    '(https://gist.github.com/karpathy/442a6bf555914893e9891c11519de94f) - an',
+    'independent implementation of that pattern, not a fork of any of his code.',
+    'Everything lives under `.project-memory/` (same convention as the',
+    '`remember` plugin\'s `.remember/`), and every file the plugin scaffolds',
+    'says so in its own header - this is plugin-managed structure, not ad hoc',
+    'project documentation:',
     '',
-    '- `PROJECT_STATE.md` - current truth only, overwritten each session.',
-    '- `Wiki/*.md` - durable facts and decisions, organized by topic,',
-    '  edited in place as understanding changes, cross-referenced from',
-    '  `Wiki/index.md`.',
-    '- `Wiki/log.md` - append-only chronological record, read only on',
-    '  request.',
+    '- `.project-memory/PROJECT_STATE.md` - current truth only, overwritten',
+    '  each session.',
+    '- `.project-memory/Wiki/*.md` - durable facts and decisions, organized',
+    '  by topic, edited in place as understanding changes, cross-referenced',
+    '  from `.project-memory/Wiki/index.md`.',
+    '- `.project-memory/Wiki/log.md` - append-only chronological record,',
+    '  read only on request.',
     '',
     'Promotion Rule (self-maintaining, do not wait to be asked): a durable',
     'fact or decision -> write/update a Wiki page now; a status-only update',
-    '-> overwrite `PROJECT_STATE.md` now; the full narrative of how',
-    'something happened -> append `Wiki/log.md` now. Do this as part of',
-    'normal work, not just when a human explicitly asks for a memory update.',
+    '-> overwrite `.project-memory/PROJECT_STATE.md` now; the full narrative',
+    'of how something happened -> append `.project-memory/Wiki/log.md` now.',
+    'Do this as part of normal work, not just when a human explicitly asks',
+    'for a memory update.',
     '',
     'Commands (manual/explicit fallback, not the primary path): `/memory-log`',
     '(force a log entry), `/memory-promote` (force a Wiki write + index',
