@@ -134,7 +134,15 @@ function seedClaudeMd() {
   // should retry on its own if it fails, regardless of whether the memory
   // files above were written successfully. Matches the sibling role-modes
   // plugin's seedClaudeMd, which is likewise fully self-contained.
-  const sentinelFile = path.join(stateDir, '.claude-md-seeded');
+  // Namespaced, not the generic `.claude-md-seeded` name - the sibling
+  // role-modes plugin uses that exact filename for its own CLAUDE.md-seed
+  // gate. A shared `.claude/hooks/state/` directory means a bare, generic
+  // sentinel name silently collides across plugins: whichever plugin's
+  // SessionStart hook runs first "claims" the sentinel, and every other
+  // plugin sharing that name sees it already exists and skips seeding its
+  // own block entirely - found live, verifying this exact scenario against
+  // a real project with both plugins installed.
+  const sentinelFile = path.join(stateDir, '.project-memory-claude-md-seeded');
   if (fs.existsSync(sentinelFile)) return;
 
   const marker = '<!-- project-memory-plugin:v1 -->';
