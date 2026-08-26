@@ -1,0 +1,5 @@
+{
+  "name": "project-memory",
+  "version": "1.0.0",
+  "description": "Portable, self-scaffolding three-layer project memory system for Claude Code - a current-state doc, a durable cross-referenced Wiki, and an append-only log."
+}

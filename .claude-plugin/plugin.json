@@ -1,0 +1,18 @@
+{
+  "name": "project-memory",
+  "description": "Portable, self-scaffolding three-layer project memory system for Claude Code - a current-state doc, a durable cross-referenced Wiki, and an append-only log.",
+  "version": "1.0.0",
+  "author": {
+    "name": "Muhaiminul Abedin Farhan",
+    "url": "https://github.com/muhaiminul00"
+  },
+  "license": "MIT",
+  "keywords": [
+    "memory",
+    "wiki",
+    "knowledge-base",
+    "project-state",
+    "documentation",
+    "context"
+  ]
+}
