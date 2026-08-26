@@ -122,6 +122,7 @@ function template(title, bodyLines) {
     `# ${title}`,
     '',
     ...bodyLines,
+    '',
     '(Scaffolded by the `project-memory` plugin on first run.)',
     ''
   ].join('\n');
