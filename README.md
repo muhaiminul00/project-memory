@@ -40,17 +40,9 @@ have to rebuild it yourself.
 - Ships four slash commands as an explicit, manual fallback for when you
   want to force one of the workflows directly: `/memory-log`,
   `/memory-promote`, `/memory-lint`, `/memory-init`.
-- No manual setup step, at either install scope. Installed for one project:
-  it scaffolds that project the next time Claude Code starts there.
-  Installed at user scope: it scaffolds whatever project you open next,
-  automatically, the same way it would on a fresh per-project install -
-  there's nothing to remember to run first. **Caveat, stated plainly:**
-  "the next time Claude Code starts there" means an actual session boundary
-  - `startup`, `resume`, `compact`, `clear`, or a forked session. Running
-  `/plugin install` itself does not trigger it, even mid-session - Claude
-  Code has no hook that fires the instant a plugin is enabled, only at the
-  next session boundary. If nothing's scaffolded right after installing,
-  that's expected; `/clear` (or restarting) is what actually kicks it off.
+- No manual setup step required, at either install scope, though `/memory-init`
+  is there for running it right now instead of waiting - see Install/Setup
+  below for the exact mechanics and the session-boundary caveat.
 
 ## Why use it
 
@@ -69,25 +61,79 @@ that pattern for Claude Code - not a fork or a copy of any of his code -
 packaged so it scaffolds and self-maintains automatically instead of being
 set up by hand each time.
 
-## How to use it
+## Install
 
 ```
 /plugin marketplace add https://github.com/muhaiminul00/project-memory
 /plugin install project-memory@project-memory
 ```
 
-That's it. Open (or restart) a project and the three files appear if
-they're missing. From there, just work normally - Claude is expected to
-keep the state doc, the Wiki, and the log up to date on its own, applying
-the Promotion Rule below without being asked. If you want to force a
-specific update, use the matching slash command:
+**Caveat, stated plainly:** scaffolding happens the next time Claude Code
+starts in that project - an actual session boundary (`startup`, `resume`,
+`compact`, `clear`, or a forked session), not the moment `/plugin install`
+runs. If you don't want to wait (or you're testing right after installing),
+run `/memory-init` - it scaffolds everything immediately, in the current
+session, with no restart.
+
+## Setup
+
+Nothing to configure for the defaults. Optional, once installed:
+
+1. Run `/memory-init` to scaffold now instead of waiting for the next
+   session boundary.
+2. If your project already tracks state/decisions under different file
+   names, say so in `.claude/CLAUDE.md` (the seeded block leaves a
+   placeholder for exactly this) instead of using the defaults.
+3. Pair with [`role-modes`](https://github.com/muhaiminul00/role-modes) if
+   you also want the advisor/commander/execute mode system that reads and
+   writes this memory during real work.
+
+## Usage example
+
+A fresh project, right after install, in a live session:
+
+```
+> /memory-init
+Created .project-memory/PROJECT_STATE.md
+Created .project-memory/Wiki/index.md
+Created .project-memory/Wiki/log.md
+Seeded .claude/CLAUDE.md with the project-memory starter block.
+```
+
+Resulting tree:
+
+```
+.project-memory/
+├── PROJECT_STATE.md
+└── Wiki/
+    ├── index.md
+    └── log.md
+```
+
+Later, after deciding something durable:
+
+```
+> /memory-promote We decided to use Postgres row-level security instead
+  of an app-layer permission check, because RLS holds even if a future
+  endpoint forgets to check.
+
+Wrote .project-memory/Wiki/decisions/rls-over-app-layer-checks.md,
+cross-referenced it from Wiki/index.md.
+```
+
+From there, just work normally - Claude is expected to keep the state doc,
+the Wiki, and the log up to date on its own, applying the Promotion Rule
+below without being asked. If you want to force a specific update, use the
+matching slash command:
 
 - `/memory-log` - append a dated entry to the log.
 - `/memory-promote` - write or update a durable Wiki page from a fact or
   decision, and cross-reference it from the index.
 - `/memory-lint` - health-check the Wiki for contradictions, orphan pages,
   stale claims, and missing cross-references.
-- `/memory-init` - re-run or repair the scaffold if a layer is missing.
+- `/memory-init` - re-run or repair the scaffold if a layer is missing, or
+  run the entire first-time setup (files + CLAUDE.md block) immediately
+  instead of waiting for the next session boundary.
 
 ## The Promotion Rule
 
@@ -136,6 +182,15 @@ project already tracks state or decisions under different names:
   [`role-modes`](https://github.com/muhaiminul00/role-modes) plugin for the
   advisor/commander/execute mode system that actually reads and writes this
   memory during real work. Independently useful either way.
+- **`/memory-init` duplicates content, on purpose, with a check.**
+  `commands/memory-init.md` embeds a literal copy of the `.claude/CLAUDE.md`
+  starter block that `hooks/session-start.js` writes - a slash-command has
+  no way to read the hook's own code (`${CLAUDE_PLUGIN_ROOT}` is
+  hooks/MCP/LSP/monitor-only). Rather than trust a comment alone to catch
+  the two drifting apart, `scripts/check-init-sync.js` actually runs the
+  hook against a scratch project and byte-diffs its output against the
+  command file - run it after editing the block's wording, before
+  committing.
 
 ## License
 

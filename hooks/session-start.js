@@ -161,6 +161,12 @@ function seedClaudeMd() {
   // plugin sharing that name sees it already exists and skips seeding its
   // own block entirely - found live, verifying this exact scenario against
   // a real project with both plugins installed.
+  // MAINTENANCE: commands/memory-init.md carries a literal copy of the block
+  // below (a slash-command can't require() this file - ${CLAUDE_PLUGIN_ROOT}
+  // is only readable from hooks/MCP/LSP/monitor processes, not commands).
+  // Keep both in sync when editing the block's wording, then run
+  // `node scripts/check-init-sync.js` to verify - a comment alone doesn't
+  // catch drift, that script does.
   const sentinelFile = path.join(stateDir, '.project-memory-claude-md-seeded');
   if (fs.existsSync(sentinelFile)) return;
 
