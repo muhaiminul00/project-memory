@@ -29,12 +29,19 @@ const WIKI_LOG = path.join(WIKI_DIR, 'log.md');
 // Kept short and directive on purpose: the full three-layer explanation and
 // the Promotion Rule live in exactly one place - the seeded CLAUDE.md block
 // (see seedClaudeMd below) and the README - not restated here too. This is
-// just a pointer so every session is reminded the system exists.
+// just a pointer so every session is reminded the system exists AND that
+// maintaining it is the default, automatic behavior - not something that
+// waits for a human to type a /memory-* command.
 const context =
   'MEMORY: this project has the `project-memory` plugin installed (a state doc + a durable ' +
-  "cross-referenced Wiki + an append-only log). See this project's own CLAUDE.md for the " +
-  'Promotion Rule and file names if it defines them, else the defaults are `PROJECT_STATE.md` ' +
-  'and `Wiki/` (`index.md`, `log.md`) at the project root.';
+  'cross-referenced Wiki + an append-only log). Apply the Promotion Rule yourself, without ' +
+  'being asked: a durable fact/decision -> write/update a Wiki page now; a status-only update ' +
+  '-> overwrite the state doc now; the full narrative of how something happened -> append the ' +
+  "log now. `/memory-log`/`/memory-promote`/`/memory-lint` are the manual fallback for when you " +
+  "want to trigger one explicitly, not the primary path. See this project's `.claude/CLAUDE.md` " +
+  "(this plugin's own seeded instructions) and its root CLAUDE.md for file names if either " +
+  'defines them, else the defaults are `PROJECT_STATE.md` and `Wiki/` (`index.md`, `log.md`) at ' +
+  'the project root.';
 
 const output = {
   hookSpecificOutput: {
@@ -146,7 +153,13 @@ function seedClaudeMd() {
   if (fs.existsSync(sentinelFile)) return;
 
   const marker = '<!-- project-memory-plugin:v1 -->';
-  const claudeMdPath = path.join(projectDir, 'CLAUDE.md');
+  // Seeded under .claude/CLAUDE.md, not the project's root CLAUDE.md - this
+  // is tool/plugin instruction, not project documentation, and keeping it
+  // out of the file a human actually maintains keeps that file clean. Claude
+  // Code loads .claude/CLAUDE.md the same as root CLAUDE.md, so nothing is
+  // lost by seeding here instead.
+  const dotClaudeDir = path.join(projectDir, '.claude');
+  const claudeMdPath = path.join(dotClaudeDir, 'CLAUDE.md');
 
   const block = [
     '',
@@ -155,7 +168,9 @@ function seedClaudeMd() {
     '',
     'This project has the `project-memory` plugin installed, providing a',
     'three-layer memory model, based on the LLM-maintained-wiki pattern',
-    '(https://gist.github.com/karpathy/442a6bf555914893e9891c11519de94f):',
+    '(https://gist.github.com/karpathy/442a6bf555914893e9891c11519de94f).',
+    'Every file the plugin scaffolds says so in its own header - this is',
+    'plugin-managed structure, not ad hoc project documentation:',
     '',
     '- `PROJECT_STATE.md` - current truth only, overwritten each session.',
     '- `Wiki/*.md` - durable facts and decisions, organized by topic,',
@@ -164,14 +179,17 @@ function seedClaudeMd() {
     '- `Wiki/log.md` - append-only chronological record, read only on',
     '  request.',
     '',
-    'Promotion Rule: a durable fact or decision goes to a Wiki page; a',
-    'status-only update goes to `PROJECT_STATE.md`; the full narrative of',
-    'how something happened goes to `Wiki/log.md`.',
+    'Promotion Rule (self-maintaining, do not wait to be asked): a durable',
+    'fact or decision -> write/update a Wiki page now; a status-only update',
+    '-> overwrite `PROJECT_STATE.md` now; the full narrative of how',
+    'something happened -> append `Wiki/log.md` now. Do this as part of',
+    'normal work, not just when a human explicitly asks for a memory update.',
     '',
-    'Commands: `/memory-log` (append a log entry), `/memory-promote`',
-    '(write/update a Wiki page + index cross-reference), `/memory-lint`',
-    '(health-check the Wiki for contradictions/orphans/stale claims),',
-    '`/memory-init` (re-run/repair the scaffold).',
+    'Commands (manual/explicit fallback, not the primary path): `/memory-log`',
+    '(force a log entry), `/memory-promote` (force a Wiki write + index',
+    'cross-reference), `/memory-lint` (health-check the Wiki for',
+    'contradictions/orphans/stale claims), `/memory-init` (re-run/repair the',
+    'scaffold).',
     '',
     'Fill in the specifics that make this useful for THIS project:',
     '- If this project already tracks state/decisions under different file',
@@ -187,11 +205,12 @@ function seedClaudeMd() {
   ].join('\n');
 
   try {
+    fs.mkdirSync(dotClaudeDir, { recursive: true });
     let existing = '';
     try {
       existing = fs.readFileSync(claudeMdPath, 'utf8');
     } catch (readErr) {
-      existing = ''; // No CLAUDE.md yet - fine, we'll create one.
+      existing = ''; // No .claude/CLAUDE.md yet - fine, we'll create one.
     }
     if (!existing.includes(marker)) {
       const needsLeadingNewline = existing.length > 0 && !existing.endsWith('\n');

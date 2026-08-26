@@ -2,7 +2,7 @@
 description: Append a dated entry to this project's Wiki log (append-only, never edited in place)
 ---
 
-Append one new entry to this project's append-only Wiki log (default `Wiki/log.md`, or wherever this project's own CLAUDE.md names it instead).
+Append one new entry to this project's append-only Wiki log (default `Wiki/log.md`, or wherever this project's `.claude/CLAUDE.md` or root CLAUDE.md names it instead).
 
 Entry format: a dated heading followed by what happened, why, and what it resolved to - parseable and greppable, matching whatever prefix/heading convention existing entries in that file already use (read the last few entries first and match their shape; if the file is new/empty, use `## [YYYY-MM-DD] <short-slug> | <one-line summary>` as the heading).
 
